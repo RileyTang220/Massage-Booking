@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  THERAPIST
+  ADMIN
+}
+
+enum TherapistStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum BookingStatus {
+  DRAFT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model User {
+  id             String      @id @default(cuid())
+  role           UserRole
+  email          String      @unique
+  phone          String?
+  fullName       String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  customer       Customer?
+  therapist      Therapist?
+  adminProfile   AdminProfile?
+}
+
+model Customer {
+  id             String      @id @default(cuid())
+  userId         String      @unique
+  marketingOptIn Boolean     @default(false)
+  user           User        @relation(fields: [userId], references: [id])
+  bookings       Booking[]
+}
+
+model Therapist {
+  id                        String            @id @default(cuid())
+  userId                    String            @unique
+  status                    TherapistStatus   @default(PENDING)
+  bio                       String?
+  serviceRadiusKm           Int               @default(10)
+  ratingAverage             Decimal           @default(0)
+  ratingCount               Int               @default(0)
+  stripeConnectAccountId    String?           @unique
+  stripeCustomerId          String?           @unique
+  stripeSubscriptionId      String?           @unique
+  oneTimeFeePaidAt          DateTime?
+  subscriptionActive        Boolean           @default(false)
+  suburbs                   String[]
+  skills                    String[]
+  user                      User              @relation(fields: [userId], references: [id])
+  availabilitySlots         AvailabilitySlot[]
+  bookingAssignments        Booking[]         @relation("AssignedTherapist")
+  payouts                   Payout[]
+}
+
+model AvailabilitySlot {
+  id            String      @id @default(cuid())
+  therapistId   String
+  startsAt      DateTime
+  endsAt        DateTime
+  isBlocked     Boolean     @default(false)
+  therapist     Therapist   @relation(fields: [therapistId], references: [id])
+
+  @@index([therapistId, startsAt, endsAt])
+}
+
+model Booking {
+  id                    String         @id @default(cuid())
+  customerId            String
+  therapistId           String?
+  serviceName           String
+  suburb                String
+  addressLine1          String?
+  startsAt              DateTime
+  endsAt                DateTime
+  notes                 String?
+  status                BookingStatus  @default(DRAFT)
+  paymentStatus         PaymentStatus  @default(PENDING)
+  stripePaymentIntentId String?        @unique
+  totalAmount           Int
+  platformFeeAmount     Int
+  therapistAmount       Int
+  createdAt             DateTime       @default(now())
+  customer              Customer       @relation(fields: [customerId], references: [id])
+  therapist             Therapist?     @relation("AssignedTherapist", fields: [therapistId], references: [id])
+}
+
+model Payout {
+  id                String      @id @default(cuid())
+  therapistId       String
+  bookingId         String?
+  stripeTransferId  String?     @unique
+  amount            Int
+  currency          String      @default("aud")
+  createdAt         DateTime    @default(now())
+  therapist         Therapist   @relation(fields: [therapistId], references: [id])
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+}
