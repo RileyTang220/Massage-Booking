@@ -56,32 +56,3 @@ This stack handles those better than a no-code foundation.
 3. Run `npx prisma generate`.
 4. Run `npx prisma migrate dev`.
 5. Start the app with `npm run dev`.
-
-## Vercel deployment
-
-This repo is currently safe to deploy on Vercel with mock data enabled.
-
-- The customer flow, therapist pages, dashboard pages, and admin page all run from in-repo demo data.
-- PostgreSQL, Stripe, Twilio, and Google Maps are still optional at deploy time because the current MVP does not require live integrations to render or build.
-- `prisma generate` runs automatically during install via `postinstall`, so Vercel can build the app without extra setup.
-
-### Minimum environment variables for mock deployment
-
-- `NEXT_PUBLIC_APP_URL`
-- `STRIPE_SECRET_KEY`
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-
-Use placeholder test values if you are only deploying the mock version.
-
-### Recommended Vercel settings
-
-1. Import the repo into Vercel.
-2. Framework preset: `Next.js`.
-3. Install command: `npm install`.
-4. Build command: `npm run build`.
-5. Output directory: leave blank.
-
-### Production note
-
-When you move beyond mock data, add a real `DATABASE_URL`, run Prisma migrations against production PostgreSQL, and replace the placeholder Stripe/Twilio/API handlers with live implementations.
